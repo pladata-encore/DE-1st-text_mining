@@ -1,0 +1,16 @@
+# ignored file for git
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+bin/
+lib/
+include/
+lib64/
+share/
+pyvenv.cfg
+
+# Project Environment
+.env
