@@ -9,6 +9,8 @@ bin/
 lib/
 include/
 lib64/
+# also symlink lib64
+lib64
 share/
 pyvenv.cfg
 
