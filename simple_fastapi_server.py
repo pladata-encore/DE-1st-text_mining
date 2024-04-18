@@ -24,7 +24,6 @@ conn = pymysql.connect(
   db=db_info["DB_NAME"],
   charset='utf8',
   cursorclass=pymysql.cursors.DictCursor  # Use DictCursor
-
 )
 cur = conn.cursor()
 
@@ -40,7 +39,7 @@ async def root():
   # execute sql
   sql = """
     SELECT *
-    FROM job_data_t
+    FROM job_data
     LIMIT 10
   """
   cur.execute(sql)
@@ -55,7 +54,7 @@ async def read_jobs(req: int):
   """
   sql = """
     SELECT *
-    FROM job_data jd_t
+    FROM job_data jd
     WHERE jd.career >= %s;
   """ 
   cur.execute(sql, (req,))
@@ -63,14 +62,14 @@ async def read_jobs(req: int):
   return {"message": result}
 
 # define routes "/jobs/skill/{skill}"
-@app.get("jobs/skill/{skill}")
+@app.get("/jobs/skill/{skill}")
 async def read_skill(skill: str):
   """
   Return the jobs that require the skill
   """
   sql = """
     SELECT *
-    FROM job_data jd_t
+    FROM job_data jd
     WHERE INSTR(tech_stack, %s) > 0;
   """ 
   cur.execute(sql, (skill,))
@@ -82,7 +81,7 @@ async def read_skill(skill: str):
 @app.get("/jobs/date/{date}")
 async def read_date(date: str):
   """
-  Return the jobs that are available after the date
+  Return the jobs that are available after the date ex) 20240101 (yyyymmdd)
   """
   if len(date) != 8:
     return {"message": "Invalid date format. Please use yyyymmdd format."}
@@ -92,7 +91,7 @@ async def read_date(date: str):
   # find jobs after the date
   sql = """
     SELECT *
-    FROM job_data jd_t
+    FROM job_data jd
     WHERE jd.date_until >= STR_TO_DATE(%s, '%%Y-%%m-%%d')
   """ 
   cur.execute(sql, (date,))
@@ -108,17 +107,20 @@ async def read_wordcloud():
   word_count = Counter()
   sql = """
     SELECT tech_stack
-    FROM job_data_t
+    FROM job_data
   """
   cur.execute(sql)
   rows = cur.fetchall()
   for row in rows:
-    # row = {'tech_stack': "['Java', 'C++', 'Swift']"}
+    # row = {'tech_stack': "Java, C++, Swift"}
     tech_stack = row['tech_stack']
     # extract words from tech_stack
-    words = re.findall(r"'(.*?)'", tech_stack)
-    for word in words:
-      word_count[word] += 1
+    if tech_stack == None:
+      continue
+    else:
+      words = tech_stack.split(',')
+      for word in words:
+        word_count[word] += 1
 
   # draw a word cloud
   wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_count)
