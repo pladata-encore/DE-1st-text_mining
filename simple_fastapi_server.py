@@ -1,5 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
+from io import BytesIO
 import pymysql
+from collections import Counter
+import re
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 # execution command
 # uvicorn simple_fastapi_server:app --host 0.0.0.0 --port 8023 --reload
@@ -35,7 +40,7 @@ async def root():
   # execute sql
   sql = """
     SELECT *
-    FROM job_data
+    FROM job_data_t
     LIMIT 10
   """
   cur.execute(sql)
@@ -50,7 +55,7 @@ async def read_jobs(req: int):
   """
   sql = """
     SELECT *
-    FROM job_data jd
+    FROM job_data jd_t
     WHERE jd.career >= %s;
   """ 
   cur.execute(sql, (req,))
@@ -65,7 +70,7 @@ async def read_skill(skill: str):
   """
   sql = """
     SELECT *
-    FROM job_data jd
+    FROM job_data jd_t
     WHERE INSTR(tech_stack, %s) > 0;
   """ 
   cur.execute(sql, (skill,))
@@ -87,9 +92,42 @@ async def read_date(date: str):
   # find jobs after the date
   sql = """
     SELECT *
-    FROM job_data jd
+    FROM job_data jd_t
     WHERE jd.date_until >= STR_TO_DATE(%s, '%%Y-%%m-%%d')
   """ 
   cur.execute(sql, (date,))
   result = cur.fetchall()
   return {"message": result}
+
+# define routes "/skill/wordcloud"
+@app.get("/skill/wordcloud")
+async def read_wordcloud():
+  """
+  Return the wordcloud image of tech_stack
+  """
+  word_count = Counter()
+  sql = """
+    SELECT tech_stack
+    FROM job_data_t
+  """
+  cur.execute(sql)
+  rows = cur.fetchall()
+  for row in rows:
+    # row = {'tech_stack': "['Java', 'C++', 'Swift']"}
+    tech_stack = row['tech_stack']
+    # extract words from tech_stack
+    words = re.findall(r"'(.*?)'", tech_stack)
+    for word in words:
+      word_count[word] += 1
+
+  # draw a word cloud
+  wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_count)
+  plt.figure(figsize=(10, 6))
+  plt.imshow(wordcloud, interpolation='bilinear')
+  plt.axis('off')
+  
+  # return the image
+  buf = BytesIO()
+  plt.savefig(buf, format='png')
+  buf.seek(0)
+  return Response(content=buf.getvalue(), media_type="image/png")
