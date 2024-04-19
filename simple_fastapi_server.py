@@ -29,9 +29,11 @@ app = FastAPI()
 @app.get("/")
 async def root():
   # execute sql
-  sql = "SELECT * FROM job_data"
+  sql = "SELECT * FROM job_data LIMIT 5"
   cur.execute(sql)
   result = cur.fetchall()
+  cur.close()
+  conn.close()
   return {"message": result}
 
 # define routes "/jobs"
