@@ -147,7 +147,7 @@ async def read_skill_wordcloud():
         word_count[word] += 1
 
   # draw a word cloud
-  wordcloud = WordCloud(width=1200, height=700, background_color='white').generate_from_frequencies(word_count)
+  wordcloud = WordCloud(width=1200, height=700, font_path=os.getcwd() + '/GmarketSansTTFMedium.ttf', background_color='white').generate_from_frequencies(word_count)
   plt.figure(figsize=(20, 12))
   plt.imshow(wordcloud, interpolation='bilinear')
   plt.axis('off')
